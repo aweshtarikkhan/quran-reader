@@ -17,16 +17,18 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: radial-gradient(circle at top right, #d9f99d 0%, #f7f3ea 32%, #ecfeff 100%);
   color: var(--text);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .app-header {
   position: sticky;
-  top: 0;
+  top: env(safe-area-inset-top);
   z-index: 10;
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--border);
-  padding: 14px 16px;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
   box-shadow: 0 8px 18px rgba(2, 6, 23, 0.05);
 }
 
@@ -43,7 +45,7 @@ body {
 
 main {
   padding: 12px;
-  padding-bottom: 88px;
+  padding-bottom: calc(118px + env(safe-area-inset-bottom));
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -487,23 +489,41 @@ h3 {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 4px;
-  padding: 6px;
+  padding: 10px 6px calc(10px + env(safe-area-inset-bottom));
+  min-height: 86px;
 }
 
 .nav-btn {
   border: 0;
   background: transparent;
-  font-size: 0.73rem;
+  font-size: 0.82rem;
   color: #334155;
-  padding: 8px 4px;
+  padding: 10px 6px;
   border-radius: 8px;
   cursor: pointer;
+  min-height: 52px;
+  font-weight: 600;
 }
 
 .nav-btn.active {
   background: var(--primary-soft);
   color: #065f46;
   font-weight: 600;
+}
+
+.page-topbar {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 8px;
+}
+
+.home-back-btn {
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 0.88rem;
+  cursor: pointer;
 }
 
 @keyframes reveal {

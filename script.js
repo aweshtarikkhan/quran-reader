@@ -193,8 +193,18 @@ async function confirmExitApp() {
 }
 
 function card(title, content) {
+  const backBar =
+    state.view !== "home"
+      ? `
+    <div class="page-topbar">
+      <button class="home-back-btn" data-home-back="1">← Home</button>
+    </div>
+  `
+      : "";
+
   return `
     <section class="card">
+      ${backBar}
       <h2>${title}</h2>
       ${content}
     </section>
@@ -1078,6 +1088,12 @@ navButtons.forEach((btn) => {
   btn.addEventListener("click", () => {
     navigateTo(btn.dataset.view);
   });
+});
+
+app.addEventListener("click", (event) => {
+  const backButton = event.target.closest("[data-home-back]");
+  if (!backButton) return;
+  navigateTo("home");
 });
 
 state.bookmarkPage = readBookmarkPage();
