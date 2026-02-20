@@ -20,7 +20,15 @@ jobs:
           cache: npm
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install -D typescript
+          npm install @capacitor/core @capacitor/cli
+
+      - name: Build Web (copy files to www)
+        run: |
+          mkdir -p www
+          cp -r index.html styles.css script.js assets data scripts manifest.webmanifest service-worker.js www/ 2>/dev/null || true
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -33,14 +41,41 @@ jobs:
           if [ ! -d "android" ]; then
             npx cap add android
           fi
+          npx cap copy
           npx cap sync android
 
+      # ---- SIGNED RELEASE PART ---- #
+      - name: Decode Keystore
+        run: echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > my-release-key.jks
+
+      - name: Create gradle.properties
+        run: |
+          echo "MYAPP_RELEASE_STORE_FILE=my-release-key.jks" >> android/gradle.properties
+          echo "MYAPP_RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> android/gradle.properties
+          echo "MYAPP_RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> android/gradle.properties
+          echo "MYAPP_RELEASE_KEY_PASSWORD=${{ secrets.KEY_ALIAS_PASSWORD }}" >> android/gradle.properties
+
+      - name: Inject SigningConfig into build.gradle
+        run: |
+          sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' android/app/build.gradle || true
+
+      - name: Build Release APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: quran-reader-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+
+      # ---- DEBUG APK BUILD ---- #
       - name: Build Debug APK
         working-directory: android
         run: ./gradlew assembleDebug
 
-      - name: Upload APK Artifact
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: quran-reader-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: android/app/build/outputs/apk/debug/*.apk
