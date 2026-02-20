@@ -1,0 +1,31 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>Quran Reader</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Quran Sharif Reader</h1>
+    <p>Mobile-friendly Quran reading app</p>
+  </header>
+
+  <main id="app"></main>
+
+  <nav class="bottom-nav" aria-label="Main navigation">
+    <button class="nav-btn" data-view="home">Home</button>
+    <button class="nav-btn" data-view="readquran">Read Quran</button>
+    <button class="nav-btn" data-view="line">15 Line</button>
+    <button class="nav-btn" data-view="translation">Translation</button>
+    <button class="nav-btn" data-view="surah">By Surah</button>
+    <button class="nav-btn" data-view="sehri">Sehri/Iftar</button>
+  </nav>
+
+  <script src="data/surahList.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
