@@ -619,13 +619,26 @@ async function reverseGeocode(lat, lon) {
 }
 
 async function refreshPermissionInfo() {
-  try {
-    if (navigator.permissions && navigator.permissions.query) {
-      const loc = await navigator.permissions.query({ name: "geolocation" });
-      state.permissionInfo.location = loc.state || "unknown";
+  const cap = window.Capacitor;
+  const geoPlugin = cap && cap.Plugins ? cap.Plugins.Geolocation : null;
+
+  if (geoPlugin && geoPlugin.checkPermissions) {
+    try {
+      const p = await geoPlugin.checkPermissions();
+      const stateText = p.location || p.coarseLocation || "unknown";
+      state.permissionInfo.location = stateText;
+    } catch {
+      state.permissionInfo.location = "unknown";
     }
-  } catch {
-    state.permissionInfo.location = "unknown";
+  } else {
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const loc = await navigator.permissions.query({ name: "geolocation" });
+        state.permissionInfo.location = loc.state || "unknown";
+      }
+    } catch {
+      state.permissionInfo.location = "unknown";
+    }
   }
 
   try {
@@ -639,6 +652,15 @@ async function refreshPermissionInfo() {
 }
 
 async function requestRequiredPermissions() {
+  const cap = window.Capacitor;
+  const geoPlugin = cap && cap.Plugins ? cap.Plugins.Geolocation : null;
+
+  if (geoPlugin && geoPlugin.requestPermissions) {
+    try {
+      await geoPlugin.requestPermissions();
+    } catch {}
+  }
+
   try {
     if (navigator.storage && navigator.storage.persist) {
       await navigator.storage.persist();
@@ -776,19 +798,36 @@ function renderSehriIftar() {
   });
 
   document.getElementById("geo-btn").addEventListener("click", () => {
+    const cap = window.Capacitor;
+    const geoPlugin = cap && cap.Plugins ? cap.Plugins.Geolocation : null;
+
+    const onCoords = async (lat, lon) => {
+      try {
+        state.prayerCity = await reverseGeocode(lat, lon);
+        await loadPrayerTimes(lat, lon);
+        renderSehriIftar();
+      } catch (error) {
+        const box = document.getElementById("prayer-result");
+        if (box) box.innerHTML = `<p class="translation">Unable to load timings. (${error.message})</p>`;
+      }
+    };
+
+    if (geoPlugin && geoPlugin.getCurrentPosition) {
+      geoPlugin
+        .requestPermissions()
+        .then(() => geoPlugin.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 }))
+        .then((pos) => onCoords(pos.coords.latitude, pos.coords.longitude))
+        .catch(() => {
+          const box = document.getElementById("prayer-result");
+          if (box) box.innerHTML = `<p class="translation">Location permission denied.</p>`;
+        });
+      return;
+    }
+
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        try {
-          const lat = position.coords.latitude;
-          const lon = position.coords.longitude;
-          state.prayerCity = await reverseGeocode(lat, lon);
-          await loadPrayerTimes(lat, lon);
-          renderSehriIftar();
-        } catch (error) {
-          const box = document.getElementById("prayer-result");
-          if (box) box.innerHTML = `<p class="translation">Unable to load timings. (${error.message})</p>`;
-        }
+        await onCoords(position.coords.latitude, position.coords.longitude);
       },
       () => {
         const box = document.getElementById("prayer-result");
