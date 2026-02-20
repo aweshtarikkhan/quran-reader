@@ -17,7 +17,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install Dependencies
         run: |
@@ -37,16 +36,24 @@ jobs:
           java-version: "17"
 
       - name: Ensure Android Project
+        shell: bash
         run: |
           if [ ! -d "android" ]; then
+            echo "Android folder missing → creating now"
             npx cap add android
+          else
+            echo "Android folder already exists"
           fi
+
+          # ALWAYS run these
           npx cap copy
           npx cap sync android
 
       # ---- SIGNED RELEASE PART ---- #
       - name: Decode Keystore
-        run: echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > my-release-key.jks
+        shell: bash
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > my-release-key.jks
 
       - name: Create gradle.properties
         run: |
@@ -56,6 +63,7 @@ jobs:
           echo "MYAPP_RELEASE_KEY_PASSWORD=${{ secrets.KEY_ALIAS_PASSWORD }}" >> android/gradle.properties
 
       - name: Inject SigningConfig into build.gradle
+        shell: bash
         run: |
           sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' android/app/build.gradle || true
 
