@@ -45,6 +45,10 @@ jobs:
           npx cap copy
           npx cap sync android
 
+      - name: Grant execute permission for gradlew
+        working-directory: android
+        run: chmod +x gradlew
+
       # ---- RELEASE APK BUILD (UNSIGNED) ---- #
       - name: Build Release APK
         working-directory: android
