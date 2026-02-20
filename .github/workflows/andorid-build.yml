@@ -17,12 +17,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install Dependencies
         run: |
           npm install
           npm install -D typescript
-          npm install @capacitor/core @capacitor/cli
+          npm install @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Build Web (copy files to www)
         run: |
@@ -36,37 +37,15 @@ jobs:
           java-version: "17"
 
       - name: Ensure Android Project
-        shell: bash
         run: |
+          chmod +x node_modules/.bin/cap || true
           if [ ! -d "android" ]; then
-            echo "Android folder missing → creating now"
             npx cap add android
-          else
-            echo "Android folder already exists"
           fi
-
-          # ALWAYS run these
           npx cap copy
           npx cap sync android
 
-      # ---- SIGNED RELEASE PART ---- #
-      - name: Decode Keystore
-        shell: bash
-        run: |
-          echo "${{ secrets.KEYSTORE_FILE }}" | base64 --decode > my-release-key.jks
-
-      - name: Create gradle.properties
-        run: |
-          echo "MYAPP_RELEASE_STORE_FILE=my-release-key.jks" >> android/gradle.properties
-          echo "MYAPP_RELEASE_STORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> android/gradle.properties
-          echo "MYAPP_RELEASE_KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> android/gradle.properties
-          echo "MYAPP_RELEASE_KEY_PASSWORD=${{ secrets.KEY_ALIAS_PASSWORD }}" >> android/gradle.properties
-
-      - name: Inject SigningConfig into build.gradle
-        shell: bash
-        run: |
-          sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' android/app/build.gradle || true
-
+      # ---- RELEASE APK BUILD (UNSIGNED) ---- #
       - name: Build Release APK
         working-directory: android
         run: ./gradlew assembleRelease
@@ -74,7 +53,7 @@ jobs:
       - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: quran-reader-release-apk
+          name: quraan-reader-release-unsigned-apk
           path: android/app/build/outputs/apk/release/*.apk
 
       # ---- DEBUG APK BUILD ---- #
@@ -85,5 +64,5 @@ jobs:
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: quran-reader-debug-apk
+          name: quraan-reader-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
